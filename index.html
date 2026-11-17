@@ -3,375 +3,909 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Reference Viewer</title>
-  <!-- Load Tailwind CSS for responsive, modern styling -->
+
+  <title>Keychain Hong Kong &amp; MetroGoods Product Reference Lookup</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Load Google Font: Inter -->
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: "Inter", sans-serif;
     }
-    /* Subtle fade-in animation for result cards */
+
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
+
     .animate-fade-in {
       animation: fadeIn 0.25s ease-out forwards;
     }
+
+    #barcodeReader video {
+      border-radius: 0;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between antialiased selection:bg-indigo-100 selection:text-indigo-800">
 
-  <!-- Top Navigation / Header -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <span class="font-semibold text-slate-900 tracking-tight text-base sm:text-lg">Product Reference Lookup</span>
-      </div>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
-      <!-- Demo Mode Toggle -->
-      <div class="flex items-center space-x-2">
-        <label for="demoToggle" class="inline-flex items-center cursor-pointer select-none">
-          <span class="mr-2 text-xs font-medium text-slate-500 hidden sm:inline">Preview Demo Mode</span>
-          <span class="mr-2 text-xs font-medium text-slate-500 sm:hidden">Demo</span>
-          <div class="relative">
-            <input type="checkbox" id="demoToggle" class="sr-only peer">
-            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-          </div>
-        </label>
-      </div>
+  <header class="bg-white border-b border-slate-200 py-5">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <h1 class="text-lg sm:text-xl font-semibold text-slate-900">
+        Keychain Hong Kong &amp; MetroGoods Product Reference Lookup
+      </h1>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="flex-grow max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
-    
-    <!-- Search Card -->
-    <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8">
-      <div class="max-w-xl mx-auto text-center mb-6">
-        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Find Product Reference Image</h1>
-        <p class="text-sm text-slate-500 mt-1.5">
-          Enter an 8-character alphanumeric product code below. Case-insensitive.
-        </p>
-      </div>
 
-      <!-- Input Form -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+
       <form id="lookupForm" class="max-w-lg mx-auto" novalidate>
         <div class="flex flex-col sm:flex-row gap-3">
-          <div class="relative flex-grow">
-            <input
-              type="text"
-              id="productCodeInput"
-              name="productCode"
-              maxlength="8"
-              autocomplete="off"
-              autocapitalize="characters"
-              spellcheck="false"
-              placeholder="e.g. ABCDEF12"
-              aria-label="8-digit alphanumeric product code"
-              class="w-full px-4 py-3.5 text-center sm:text-left font-mono text-lg tracking-widest uppercase bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-            />
-            <!-- Character Counter Badge -->
-            <span id="charCounter" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md pointer-events-none">
-              0/8
-            </span>
-          </div>
+          <input
+            type="text"
+            id="productCodeInput"
+            name="productCode"
+            maxlength="13"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            placeholder="EAN-13 or product code"
+            aria-label="13-digit EAN barcode or 8-character product code"
+            class="min-w-0 flex-grow w-full px-4 py-3.5 font-mono text-base uppercase bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+          >
 
           <button
             type="submit"
-            id="submitBtn"
-            class="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium text-sm sm:text-base rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
+            class="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 shrink-0"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
-            <span>View Image</span>
+            View Image
           </button>
         </div>
 
-        <!-- Inline Validation Error Message -->
-        <div id="validationError" role="alert" class="hidden mt-3 flex items-center space-x-2 text-sm text-rose-600 bg-rose-50 border border-rose-200/80 px-3.5 py-2.5 rounded-xl animate-fade-in">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-          </svg>
-          <span id="validationErrorText">Please enter a valid 8-character alphanumeric code.</span>
-        </div>
-
-        <!-- Helpful Path Hint -->
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-          <span>Target path format: <code class="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">img/XXXXXXXX.jpg</code></span>
-          <button type="button" id="trySampleBtn" class="text-indigo-600 hover:text-indigo-700 font-medium underline underline-offset-2 cursor-pointer">
-            Try sample code
-          </button>
-        </div>
+        <div
+          id="validationError"
+          role="alert"
+          class="hidden mt-3 text-sm text-rose-600 bg-rose-50 border border-rose-200 px-3.5 py-2.5 rounded-xl"
+        ></div>
       </form>
+
+      <div class="max-w-lg mx-auto mt-3">
+        <button
+          type="button"
+          id="scanBarcodeBtn"
+          aria-controls="scannerPanel"
+          aria-expanded="false"
+          class="w-full px-5 py-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-700 font-medium rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 8V4h4m8 0h4v4M4 16v4h4m8 0h4v-4M8 8v8m4-8v8m4-8v8"
+            />
+          </svg>
+          Scan Barcode
+        </button>
+
+        <div
+          id="scannerPanel"
+          class="hidden mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+          role="region"
+          aria-labelledby="scannerTitle"
+        >
+          <div class="flex items-center justify-between gap-3 px-4 py-3">
+            <h2
+              id="scannerTitle"
+              class="font-semibold text-sm text-slate-900"
+            >
+              Scan EAN-13 Barcode
+            </h2>
+
+            <button
+              type="button"
+              id="stopScanBtn"
+              class="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-100"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div id="barcodeReader" class="w-full bg-black"></div>
+
+          <p
+            id="scannerStatus"
+            role="status"
+            class="px-4 py-3 text-sm text-slate-600 text-center"
+          >
+            Hold the barcode steady inside the camera view.
+          </p>
+        </div>
+      </div>
     </section>
 
-    <!-- Dynamic Result Display Area -->
-    <section id="resultContainer" class="mt-6 hidden" aria-live="polite">
-      
-      <!-- 1. Loading State -->
-      <div id="loadingState" class="hidden bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm animate-fade-in">
+    <section
+      id="resultContainer"
+      class="mt-6 hidden"
+      aria-live="polite"
+    >
+      <div
+        id="loadingState"
+        class="hidden bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm animate-fade-in"
+      >
         <div class="inline-block w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
-        <p class="text-sm font-medium text-slate-600">Searching for <span id="loadingCodeLabel" class="font-mono font-semibold text-slate-900"></span>...</p>
+
+        <p
+          id="loadingMessage"
+          class="text-sm font-medium text-slate-600"
+        >
+          Searching...
+        </p>
       </div>
 
-      <!-- 2. Success Image Card -->
-      <div id="successCard" class="hidden bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-fade-in">
-        <!-- Card Header -->
-        <div class="px-5 py-4 bg-slate-50/80 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center space-x-2.5">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-emerald-100 text-emerald-800">
+      <div
+        id="successCard"
+        class="hidden bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-fade-in"
+      >
+        <div class="px-5 py-4 bg-slate-50 border-b border-slate-200">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <span class="px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-emerald-100 text-emerald-800">
               FOUND
             </span>
-            <h2 class="text-base font-bold font-mono text-slate-900" id="displayCode">ABCDEFG1</h2>
-            <span class="text-xs text-slate-400 hidden sm:inline" id="displayPath">(img/ABCDEFG1.jpg)</span>
+
+            <div class="flex items-center gap-2">
+              <a
+                id="openNewTabBtn"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hidden px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Open
+              </a>
+
+              <a
+                id="downloadBtn"
+                download
+                class="hidden px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+              >
+                Download
+              </a>
+            </div>
           </div>
 
-          <div class="flex items-center space-x-2">
-            <a id="openNewTabBtn" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              <span>Open</span>
-            </a>
-            <a id="downloadBtn" href="#" download="" class="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>Download</span>
-            </a>
-          </div>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+            <div>
+              <dt class="text-xs font-medium text-slate-500 mb-1">
+                EAN13
+              </dt>
+              <dd
+                id="displayEAN13"
+                class="font-mono text-slate-900 break-all"
+              ></dd>
+            </div>
+
+            <div>
+              <dt class="text-xs font-medium text-slate-500 mb-1">
+                ProductCode
+              </dt>
+              <dd
+                id="displayCode"
+                class="font-mono font-semibold text-slate-900 break-all"
+              ></dd>
+            </div>
+
+            <div class="sm:col-span-2">
+              <dt class="text-xs font-medium text-slate-500 mb-1">
+                ProductNameC
+              </dt>
+              <dd
+                id="displayProductNameC"
+                class="font-semibold text-slate-900 break-words"
+              ></dd>
+            </div>
+
+            <div class="sm:col-span-2">
+              <dt class="text-xs font-medium text-slate-500 mb-1">
+                ProductCodeLong
+              </dt>
+              <dd
+                id="displayProductCodeLong"
+                class="font-mono text-slate-900 break-all"
+              ></dd>
+            </div>
+          </dl>
         </div>
 
-        <!-- Image Viewport -->
-        <div class="p-4 sm:p-8 bg-slate-100/50 flex items-center justify-center min-h-[280px]">
-          <img 
-            id="referenceImage" 
-            src="" 
-            alt="Product Reference Image" 
-            class="max-h-[480px] w-auto max-w-full rounded-xl shadow-sm border border-slate-200/60 bg-white object-contain"
-          />
+        <div class="p-4 sm:p-8 bg-slate-100/50 flex flex-col items-center justify-center min-h-[280px]">
+          <p
+            id="productImageStatus"
+            role="status"
+            class="mb-3 text-sm text-slate-500 text-center"
+          ></p>
+
+          <img
+            id="referenceImage"
+            alt="Product Reference Image"
+            class="hidden max-h-[480px] w-auto max-w-full rounded-xl shadow-sm border border-slate-200 bg-white object-contain"
+          >
         </div>
       </div>
 
-      <!-- 3. Not Found / Error Card -->
-      <div id="notFoundCard" class="hidden bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center shadow-sm animate-fade-in">
-        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h3 class="text-base sm:text-lg font-semibold text-slate-900">
-          Image not found for code <span id="missingCodeLabel" class="font-mono text-indigo-600"></span>
-        </h3>
-        <p class="text-sm text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-          We looked for <code id="missingPathLabel" class="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">img/XXXXXXXX.jpg</code> in your repository, but no matching file was returned.
-        </p>
-        <div class="mt-5 text-xs text-slate-400 bg-slate-50 border border-slate-200/70 rounded-xl p-3 max-w-md mx-auto text-left space-y-1">
-          <p class="font-medium text-slate-600">Troubleshooting checklist:</p>
-          <ul class="list-disc list-inside space-y-0.5">
-            <li>Ensure the file is uploaded inside the <code class="font-mono">img/</code> folder.</li>
-            <li>Verify the filename uses <strong>UPPERCASE</strong> letters and <code class="font-mono">.jpg</code> extension.</li>
-            <li>If testing locally without images, toggle <strong>Demo Mode</strong> in the top-right corner.</li>
-          </ul>
-        </div>
+      <div
+        id="notFoundCard"
+        class="hidden bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center shadow-sm animate-fade-in"
+      >
+        <h2
+          id="notFoundMessage"
+          class="text-base sm:text-lg font-semibold text-slate-900"
+        ></h2>
       </div>
-
     </section>
-
   </main>
 
-  <!-- Footer -->
-  <footer class="border-t border-slate-200/80 bg-white py-5 text-center text-xs text-slate-400">
-    <div class="max-w-3xl mx-auto px-4">
-      Static Repository Asset Viewer &bull; Expects <code class="font-mono text-slate-500">img/&lt;CODE&gt;.jpg</code>
+  <footer class="bg-white border-t border-slate-200 py-5">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
+      For internal use only. For enquiry, please contact (852) 95399243
     </div>
   </footer>
 
-  <!-- Application Logic -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // DOM Elements
-      const lookupForm = document.getElementById('lookupForm');
-      const productCodeInput = document.getElementById('productCodeInput');
-      const charCounter = document.getElementById('charCounter');
-      const validationError = document.getElementById('validationError');
-      const validationErrorText = document.getElementById('validationErrorText');
-      const trySampleBtn = document.getElementById('trySampleBtn');
-      const demoToggle = document.getElementById('demoToggle');
+    document.addEventListener("DOMContentLoaded", () => {
+      const CSV_URL = "./products.csv";
+      const IMAGE_FOLDER = "./img/";
 
-      // Result Container Elements
-      const resultContainer = document.getElementById('resultContainer');
-      const loadingState = document.getElementById('loadingState');
-      const loadingCodeLabel = document.getElementById('loadingCodeLabel');
-      const successCard = document.getElementById('successCard');
-      const notFoundCard = document.getElementById('notFoundCard');
+      const PRODUCT_CODE_PATTERN = /^[A-Z0-9]{8}$/;
+      const EAN13_PATTERN = /^[0-9]{13}$/;
 
-      // Image & Action Elements
-      const referenceImage = document.getElementById('referenceImage');
-      const displayCode = document.getElementById('displayCode');
-      const displayPath = document.getElementById('displayPath');
-      const openNewTabBtn = document.getElementById('openNewTabBtn');
-      const downloadBtn = document.getElementById('downloadBtn');
-      const missingCodeLabel = document.getElementById('missingCodeLabel');
-      const missingPathLabel = document.getElementById('missingPathLabel');
+      const form = document.getElementById("lookupForm");
+      const input = document.getElementById("productCodeInput");
+      const validationError = document.getElementById("validationError");
 
-      // Alphanumeric validation regex (exactly 8 chars, A-Z and 0-9)
-      const ALPHANUMERIC_8_REGEX = /^[A-Z0-9]{8}$/;
+      const resultContainer = document.getElementById("resultContainer");
+      const loadingState = document.getElementById("loadingState");
+      const loadingMessage = document.getElementById("loadingMessage");
+      const successCard = document.getElementById("successCard");
+      const notFoundCard = document.getElementById("notFoundCard");
+      const notFoundMessage = document.getElementById("notFoundMessage");
 
-      // Auto-focus input on desktop load
-      productCodeInput.focus();
+      const referenceImage = document.getElementById("referenceImage");
+      const imageStatus = document.getElementById("productImageStatus");
+      const displayEAN13 = document.getElementById("displayEAN13");
+      const displayCode = document.getElementById("displayCode");
+      const displayProductNameC =
+        document.getElementById("displayProductNameC");
+      const displayProductCodeLong =
+        document.getElementById("displayProductCodeLong");
 
-      /**
-       * Updates character counter and normalizes input display to uppercase
-       */
-      productCodeInput.addEventListener('input', (e) => {
-        // Strip whitespace and force uppercase visually
-        const cleaned = e.target.value.replace(/\s+/g, '').toUpperCase();
-        e.target.value = cleaned;
+      const openNewTabBtn = document.getElementById("openNewTabBtn");
+      const downloadBtn = document.getElementById("downloadBtn");
 
-        // Update counter badge
-        charCounter.textContent = `${cleaned.length}/8`;
-        if (cleaned.length === 8) {
-          charCounter.classList.remove('text-slate-400', 'bg-slate-100');
-          charCounter.classList.add('text-indigo-700', 'bg-indigo-100', 'font-semibold');
-        } else {
-          charCounter.classList.add('text-slate-400', 'bg-slate-100');
-          charCounter.classList.remove('text-indigo-700', 'bg-indigo-100', 'font-semibold');
-        }
+      const scanBarcodeBtn = document.getElementById("scanBarcodeBtn");
+      const stopScanBtn = document.getElementById("stopScanBtn");
+      const scannerPanel = document.getElementById("scannerPanel");
+      const scannerStatus = document.getElementById("scannerStatus");
+      const readerElement = document.getElementById("barcodeReader");
 
-        // Hide validation error while typing
-        if (!validationError.classList.contains('hidden')) {
-          hideValidationError();
+      let mappingPromise = null;
+      let latestLookupId = 0;
+      let cameraSession = null;
+
+      // Input and result display
+
+      input.addEventListener("input", () => {
+        input.value = input.value.replace(/\s+/g, "").toUpperCase();
+
+        hideValidationError();
+        latestLookupId++;
+        resultContainer.classList.add("hidden");
+
+        if (cameraSession) {
+          void closeScanner(cameraSession);
         }
       });
 
-      /**
-       * Helper: Show inline validation error
-       */
       function showValidationError(message) {
-        validationErrorText.textContent = message;
-        validationError.classList.remove('hidden');
-        productCodeInput.classList.add('border-rose-400', 'focus:ring-rose-500', 'focus:border-rose-500');
-        productCodeInput.classList.remove('border-slate-300', 'focus:ring-indigo-500', 'focus:border-indigo-500');
+        validationError.textContent = message;
+        validationError.classList.remove("hidden");
+
+        input.setAttribute("aria-invalid", "true");
+        input.setAttribute("aria-describedby", "validationError");
       }
 
-      /**
-       * Helper: Hide inline validation error
-       */
       function hideValidationError() {
-        validationError.classList.add('hidden');
-        productCodeInput.classList.remove('border-rose-400', 'focus:ring-rose-500', 'focus:border-rose-500');
-        productCodeInput.classList.add('border-slate-300', 'focus:ring-indigo-500', 'focus:border-indigo-500');
+        validationError.classList.add("hidden");
+
+        input.removeAttribute("aria-invalid");
+        input.removeAttribute("aria-describedby");
       }
 
-      /**
-       * Helper: Switch active view inside resultContainer
-       */
       function setResultView(view) {
-        resultContainer.classList.remove('hidden');
-        loadingState.classList.add('hidden');
-        successCard.classList.add('hidden');
-        notFoundCard.classList.add('hidden');
+        resultContainer.classList.remove("hidden");
 
-        if (view === 'loading') loadingState.classList.remove('hidden');
-        if (view === 'success') successCard.classList.remove('hidden');
-        if (view === 'notfound') notFoundCard.classList.remove('hidden');
+        loadingState.classList.toggle("hidden", view !== "loading");
+        successCard.classList.toggle("hidden", view !== "success");
+        notFoundCard.classList.toggle("hidden", view !== "notfound");
       }
 
-      /**
-       * Core Lookup Function
-       */
-      function lookupProductCode(rawCode) {
-        const normalizedCode = rawCode.trim().toUpperCase();
+      function showNotFound(message) {
+        notFoundMessage.textContent = message;
+        setResultView("notfound");
+      }
 
-        // 1. Validate length and alphanumeric characters
-        if (!normalizedCode) {
-          showValidationError('Please enter an 8-digit product code.');
+      // CSV parser: handles quoted fields, commas and line breaks.
+
+      function parseCSV(text) {
+        const rows = [];
+        let row = [];
+        let field = "";
+        let insideQuotes = false;
+
+        text = text.replace(/^\uFEFF/, "");
+
+        for (let i = 0; i < text.length; i++) {
+          const character = text[i];
+
+          if (character === '"') {
+            if (insideQuotes && text[i + 1] === '"') {
+              field += '"';
+              i++;
+            } else {
+              insideQuotes = !insideQuotes;
+            }
+          } else if (character === "," && !insideQuotes) {
+            row.push(field);
+            field = "";
+          } else if (
+            (character === "\n" || character === "\r") &&
+            !insideQuotes
+          ) {
+            row.push(field);
+            rows.push(row);
+
+            row = [];
+            field = "";
+
+            if (character === "\r" && text[i + 1] === "\n") {
+              i++;
+            }
+          } else {
+            field += character;
+          }
+        }
+
+        if (insideQuotes) {
+          throw new Error(
+            "The CSV contains an unclosed quotation mark."
+          );
+        }
+
+        if (field.length > 0 || row.length > 0) {
+          row.push(field);
+          rows.push(row);
+        }
+
+        return rows;
+      }
+
+      async function fetchProductDatabase() {
+        const response = await fetch(CSV_URL, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            "Could not load products.csv. Check that it is beside index.html."
+          );
+        }
+
+        const rows = parseCSV(await response.text())
+          .filter(row => row.some(cell => cell.trim() !== ""));
+
+        if (rows.length === 0) {
+          throw new Error("products.csv is empty.");
+        }
+
+        const requiredColumns = [
+          "EAN13",
+          "ProductCode",
+          "ProductNameC",
+          "ProductCodeLong"
+        ];
+
+        const headers = rows[0].map(cell =>
+          cell.trim().toLowerCase()
+        );
+
+        const columnIndexes = requiredColumns.map(name =>
+          headers.indexOf(name.toLowerCase())
+        );
+
+        if (columnIndexes.some(index => index === -1)) {
+          throw new Error(
+            "The CSV header must include EAN13, ProductCode, " +
+            "ProductNameC and ProductCodeLong."
+          );
+        }
+
+        const byEAN13 = new Map();
+        const byProductCode = new Map();
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+
+          const product = {
+            EAN13: (row[columnIndexes[0]] || "").trim(),
+            ProductCode: (row[columnIndexes[1]] || "")
+              .trim()
+              .toUpperCase(),
+            ProductNameC: (row[columnIndexes[2]] || "").trim(),
+            ProductCodeLong: (row[columnIndexes[3]] || "").trim()
+          };
+
+          if (
+            !EAN13_PATTERN.test(product.EAN13) ||
+            !PRODUCT_CODE_PATTERN.test(product.ProductCode)
+          ) {
+            throw new Error(
+              `Invalid CSV record ${i + 1}. EAN13 must contain ` +
+              "13 digits and ProductCode must contain " +
+              "8 alphanumeric characters."
+            );
+          }
+
+          const existingEAN = byEAN13.get(product.EAN13);
+          const existingCode = byProductCode.get(product.ProductCode);
+
+          const recordsMatch = existing =>
+            requiredColumns.every(name =>
+              existing[name] === product[name]
+            );
+
+          if (existingEAN && !recordsMatch(existingEAN)) {
+            throw new Error(
+              `Conflicting CSV records for EAN13 ${product.EAN13}.`
+            );
+          }
+
+          if (existingCode && !recordsMatch(existingCode)) {
+            throw new Error(
+              `Conflicting CSV records for ProductCode ${product.ProductCode}.`
+            );
+          }
+
+          // Keep barcodes as strings to preserve leading zeros.
+          byEAN13.set(product.EAN13, product);
+          byProductCode.set(product.ProductCode, product);
+        }
+
+        if (byEAN13.size === 0) {
+          throw new Error(
+            "products.csv contains no product records."
+          );
+        }
+
+        return { byEAN13, byProductCode };
+      }
+
+      function getProductDatabase() {
+        if (!mappingPromise) {
+          mappingPromise = fetchProductDatabase().catch(error => {
+            mappingPromise = null;
+            throw error;
+          });
+        }
+
+        return mappingPromise;
+      }
+
+      // Product details and image
+
+      function displayProduct(product, lookupId) {
+        if (lookupId !== latestLookupId) return;
+
+        const productCode = product.ProductCode;
+        const imagePath = `${IMAGE_FOLDER}${productCode}.png`;
+
+        displayEAN13.textContent = product.EAN13;
+        displayCode.textContent = productCode;
+        displayProductNameC.textContent =
+          product.ProductNameC || "—";
+        displayProductCodeLong.textContent =
+          product.ProductCodeLong || "—";
+
+        referenceImage.classList.add("hidden");
+        referenceImage.removeAttribute("src");
+
+        openNewTabBtn.classList.add("hidden");
+        downloadBtn.classList.add("hidden");
+
+        openNewTabBtn.removeAttribute("href");
+        downloadBtn.removeAttribute("href");
+
+        imageStatus.textContent = "Loading image...";
+        imageStatus.classList.remove("hidden");
+
+        // Display details immediately while the image loads.
+        setResultView("success");
+
+        const imageLoader = new Image();
+
+        imageLoader.onload = () => {
+          if (lookupId !== latestLookupId) return;
+
+          referenceImage.src = imagePath;
+          referenceImage.alt =
+            product.ProductNameC ||
+            `Reference image for product ${productCode}`;
+
+          referenceImage.classList.remove("hidden");
+          imageStatus.classList.add("hidden");
+
+          openNewTabBtn.href = imagePath;
+          downloadBtn.href = imagePath;
+
+          downloadBtn.setAttribute(
+            "download",
+            `${productCode}.png`
+          );
+
+          openNewTabBtn.classList.remove("hidden");
+          downloadBtn.classList.remove("hidden");
+        };
+
+        imageLoader.onerror = () => {
+          if (lookupId !== latestLookupId) return;
+
+          // Keep product details visible if the image is missing.
+          imageStatus.textContent =
+            `Image not found for product code ${productCode}.`;
+        };
+
+        imageLoader.src = imagePath;
+      }
+
+      async function lookupProduct(rawValue) {
+        const lookupId = ++latestLookupId;
+        const value = rawValue.trim().toUpperCase();
+
+        hideValidationError();
+        resultContainer.classList.add("hidden");
+
+        if (!value) {
+          showValidationError(
+            "Please enter an EAN-13 barcode or an 8-character product code."
+          );
           return;
         }
-        if (normalizedCode.length !== 8) {
-          showValidationError(`Code must be exactly 8 characters (currently ${normalizedCode.length}).`);
+
+        const isBarcode = EAN13_PATTERN.test(value);
+        const isProductCode = PRODUCT_CODE_PATTERN.test(value);
+
+        if (!isBarcode && !isProductCode) {
+          showValidationError(
+            "Enter either 13 digits or an 8-character alphanumeric product code."
+          );
           return;
         }
-        if (!ALPHANUMERIC_8_REGEX.test(normalizedCode)) {
-          showValidationError('Only letters (A–Z) and numbers (0–9) are allowed.');
+
+        loadingMessage.textContent = `Looking up ${value}...`;
+        setResultView("loading");
+
+        try {
+          const database = await getProductDatabase();
+
+          if (lookupId !== latestLookupId) return;
+
+          const product = isBarcode
+            ? database.byEAN13.get(value)
+            : database.byProductCode.get(value);
+
+          if (!product) {
+            showNotFound(
+              isBarcode
+                ? `No product found for barcode ${value}.`
+                : `No product found for product code ${value}.`
+            );
+            return;
+          }
+
+          displayProduct(product, lookupId);
+        } catch (error) {
+          if (lookupId !== latestLookupId) return;
+
+          resultContainer.classList.add("hidden");
+
+          showValidationError(
+            error instanceof TypeError
+              ? "Unable to load the product list. Check your connection and try again."
+              : error.message
+          );
+        }
+      }
+
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+
+        if (cameraSession) {
+          void closeScanner(cameraSession);
+        }
+
+        void lookupProduct(input.value);
+      });
+
+      // Camera scanning
+
+      function isValidEAN13(value) {
+        if (!EAN13_PATTERN.test(value)) return false;
+
+        let sum = 0;
+
+        for (let i = 0; i < 12; i++) {
+          sum += Number(value[i]) * (i % 2 === 0 ? 1 : 3);
+        }
+
+        return (10 - (sum % 10)) % 10 === Number(value[12]);
+      }
+
+      function cameraErrorMessage(error) {
+        const detail =
+          `${error?.name || ""} ${error?.message || error}`;
+
+        if (
+          /NotAllowed|PermissionDenied|permission denied/i.test(detail)
+        ) {
+          return "Camera permission was denied. Allow camera access in your browser settings, then try again.";
+        }
+
+        if (/NotFound|DevicesNotFound/i.test(detail)) {
+          return "No camera was found. Connect a camera or enter the code manually.";
+        }
+
+        if (
+          /NotReadable|TrackStart|Could not start video/i.test(detail)
+        ) {
+          return "The camera could not start. Close other apps using it, then try again.";
+        }
+
+        return "Unable to open the camera. Check camera permission or enter the code manually.";
+      }
+
+      function stopRemainingVideoTracks() {
+        readerElement.querySelectorAll("video").forEach(video => {
+          const stream = video.srcObject;
+
+          if (stream && typeof stream.getTracks === "function") {
+            stream.getTracks().forEach(track => track.stop());
+          }
+
+          video.srcObject = null;
+        });
+      }
+
+      async function closeScanner(session) {
+        if (!session) return;
+
+        session.cancelled = true;
+
+        if (session.closePromise) {
+          return session.closePromise;
+        }
+
+        if (cameraSession === session) {
+          scannerPanel.classList.add("hidden");
+          scanBarcodeBtn.setAttribute("aria-expanded", "false");
+        }
+
+        session.closePromise = (async () => {
+          // Allow an outstanding camera startup to settle before cleanup.
+          try {
+            await session.startPromise;
+          } catch {
+            // Startup may have failed or permission was denied.
+          }
+
+          try {
+            if (session.scanner.isScanning) {
+              await session.scanner.stop();
+            }
+          } catch (error) {
+            console.warn("Camera cleanup:", error);
+          } finally {
+            if (cameraSession === session) {
+              stopRemainingVideoTracks();
+
+              try {
+                session.scanner.clear();
+              } catch {
+                // Reader may already be cleared.
+              }
+
+              readerElement.replaceChildren();
+              cameraSession = null;
+              scanBarcodeBtn.disabled = false;
+            }
+          }
+        })();
+
+        return session.closePromise;
+      }
+
+      function acceptScannedBarcode(session, decodedText) {
+        if (
+          cameraSession !== session ||
+          session.cancelled ||
+          session.accepted
+        ) {
           return;
         }
+
+        const barcode = decodedText.trim();
+
+        if (!isValidEAN13(barcode)) return;
+
+        session.accepted = true;
+
+        input.value = barcode;
+        hideValidationError();
+
+        void closeScanner(session);
+        void lookupProduct(barcode);
+      }
+
+      async function startScanner() {
+        if (cameraSession) return;
 
         hideValidationError();
 
-        // 2. Construct target path: img/<CODE>.jpg
-        const relativePath = `img/${normalizedCode}.jpg`;
+        if (!window.isSecureContext) {
+          showValidationError(
+            "Camera scanning requires HTTPS. Open your published GitHub Pages website."
+          );
+          return;
+        }
 
-        // Show loading spinner
-        loadingCodeLabel.textContent = normalizedCode;
-        setResultView('loading');
+        if (!navigator.mediaDevices?.getUserMedia) {
+          showValidationError(
+            "This browser does not support camera access. Try Safari or Chrome, or enter the code manually."
+          );
+          return;
+        }
 
-        // Determine image source (either real repo path or Demo Mode placeholder)
-        const isDemoMode = demoToggle.checked;
-        const targetSrc = isDemoMode
-          ? `https://placehold.co/800x500/eef2ff/4338ca?text=Demo+Product:+${normalizedCode}`
-          : relativePath;
+        if (typeof Html5Qrcode === "undefined") {
+          showValidationError(
+            "The barcode scanner could not load. Check your internet connection and refresh the page."
+          );
+          return;
+        }
 
-        // Create an off-screen Image loader to cleanly handle onload / onerror
-        const imgLoader = new Image();
+        latestLookupId++;
+        resultContainer.classList.add("hidden");
 
-        imgLoader.onload = () => {
-          referenceImage.src = targetSrc;
-          referenceImage.alt = `Reference image for product ${normalizedCode}`;
-          displayCode.textContent = normalizedCode;
-          displayPath.textContent = isDemoMode ? '(Demo Preview)' : `(${relativePath})`;
-          
-          openNewTabBtn.href = targetSrc;
-          downloadBtn.href = targetSrc;
-          downloadBtn.setAttribute('download', `${normalizedCode}.jpg`);
+        input.blur();
 
-          setResultView('success');
-        };
+        scanBarcodeBtn.disabled = true;
+        scanBarcodeBtn.setAttribute("aria-expanded", "true");
 
-        imgLoader.onerror = () => {
-          missingCodeLabel.textContent = normalizedCode;
-          missingPathLabel.textContent = relativePath;
-          setResultView('notfound');
-        };
+        scannerPanel.classList.remove("hidden");
+        scannerStatus.textContent =
+          "Allow camera access when prompted.";
 
-        // Trigger load
-        imgLoader.src = targetSrc;
+        let session;
+
+        try {
+          session = {
+            scanner: new Html5Qrcode("barcodeReader", {
+              formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13
+              ],
+              verbose: false
+            }),
+            cancelled: false,
+            accepted: false,
+            startPromise: null,
+            closePromise: null
+          };
+
+          cameraSession = session;
+
+          session.startPromise = session.scanner.start(
+            { facingMode: "environment" },
+            { fps: 10 },
+            decodedText => {
+              acceptScannedBarcode(session, decodedText);
+            },
+            () => {
+              // Frames without a readable barcode are normal.
+            }
+          );
+
+          await session.startPromise;
+
+          if (!session.cancelled && !session.accepted) {
+            scannerStatus.textContent =
+              "Hold the complete barcode steady in view. Use good lighting and move slightly closer or farther away.";
+          }
+        } catch (error) {
+          const wasCancelled = session?.cancelled;
+
+          if (session) {
+            await closeScanner(session);
+          } else {
+            scannerPanel.classList.add("hidden");
+            scanBarcodeBtn.disabled = false;
+            scanBarcodeBtn.setAttribute("aria-expanded", "false");
+          }
+
+          if (!wasCancelled) {
+            showValidationError(cameraErrorMessage(error));
+          }
+        }
       }
 
-      // Form Submit Handler (handles both Enter key and button click)
-      lookupForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        lookupProductCode(productCodeInput.value);
+      scanBarcodeBtn.addEventListener("click", () => {
+        void startScanner();
       });
 
-      // Sample Code Button Handler
-      trySampleBtn.addEventListener('click', () => {
-        const sampleCode = 'ABCDEFG1';
-        productCodeInput.value = sampleCode;
-        productCodeInput.dispatchEvent(new Event('input'));
-        // Automatically enable demo mode if user clicks "Try sample code" so they get immediate visual feedback
-        if (!demoToggle.checked) {
-          demoToggle.checked = true;
+      stopScanBtn.addEventListener("click", () => {
+        void closeScanner(cameraSession);
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && cameraSession) {
+          void closeScanner(cameraSession);
         }
-        lookupProductCode(sampleCode);
       });
 
-      // Re-run search if user toggles Demo Mode while a valid 8-char code is already entered
-      demoToggle.addEventListener('change', () => {
-        if (ALPHANUMERIC_8_REGEX.test(productCodeInput.value.trim().toUpperCase())) {
-          lookupProductCode(productCodeInput.value);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && cameraSession) {
+          void closeScanner(cameraSession);
+        }
+      });
+
+      window.addEventListener("pagehide", () => {
+        stopRemainingVideoTracks();
+
+        if (cameraSession) {
+          void closeScanner(cameraSession);
         }
       });
     });
