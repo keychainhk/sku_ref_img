@@ -8,6 +8,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.ean-upc.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -267,6 +268,28 @@
             alt="Product Reference Image"
             class="hidden max-h-[480px] w-auto max-w-full rounded-xl shadow-sm border border-slate-200 bg-white object-contain"
           >
+		  
+		  <!-- Product barcode below the image -->
+<div
+  id="productBarcodeContainer"
+  class="hidden mt-6 w-full text-center"
+>
+  <div class="inline-block max-w-full bg-white p-4 rounded-lg overflow-x-auto">
+    <svg
+      id="productBarcode"
+      role="img"
+      aria-label="Product EAN-13 barcode"
+      class="mx-auto"
+    ></svg>
+  </div>
+</div>
+
+<p
+  id="productBarcodeMessage"
+  class="hidden mt-4 text-sm text-slate-500 text-center"
+></p>
+		  
+		  
         </div>
       </div>
 
@@ -284,7 +307,7 @@
 
   <footer class="bg-white border-t border-slate-200 py-5">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
-      For internal use only. For enquiry, please contact (852) 95399243. V2611171613
+      For internal use only. For enquiry, please contact (852) 95399243. V2611171623
     </div>
   </footer>
 
@@ -536,7 +559,73 @@
   return { byEAN13, byProductCode };
 }
 	  
+	function renderProductBarcode(rawEAN13) {
+  const container =
+    document.getElementById("productBarcodeContainer");
 
+  const barcodeSVG =
+    document.getElementById("productBarcode");
+
+  const message =
+    document.getElementById("productBarcodeMessage");
+
+  const ean13 = String(rawEAN13 || "").trim();
+
+  // Clear the previous product's barcode.
+  container.classList.add("hidden");
+  message.classList.add("hidden");
+  barcodeSVG.replaceChildren();
+
+  if (!ean13) {
+    message.textContent = "No EAN-13 barcode assigned.";
+    message.classList.remove("hidden");
+    return;
+  }
+
+  if (!isValidEAN13(ean13)) {
+    message.textContent =
+      "Cannot generate barcode: the EAN-13 number or check digit is invalid.";
+
+    message.classList.remove("hidden");
+    return;
+  }
+
+  if (typeof JsBarcode === "undefined") {
+    message.textContent =
+      "The barcode generator could not load. Please refresh the page.";
+
+    message.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    JsBarcode(barcodeSVG, ean13, {
+      format: "EAN13",
+      width: 2,
+      height: 75,
+      displayValue: true,
+      fontSize: 18,
+      textMargin: 6,
+      margin: 16,
+      background: "#ffffff",
+      lineColor: "#000000"
+    });
+
+    barcodeSVG.setAttribute(
+      "aria-label",
+      `EAN-13 barcode ${ean13}`
+    );
+
+    container.classList.remove("hidden");
+  } catch (error) {
+    barcodeSVG.replaceChildren();
+
+    message.textContent =
+      "Unable to generate this product's barcode.";
+
+    message.classList.remove("hidden");
+  }
+}
 
       function getProductDatabase() {
         if (!mappingPromise) {
@@ -563,6 +652,8 @@
           product.ProductNameC || "—";
         displayProductCodeLong.textContent =
           product.ProductCodeLong || "—";
+		  
+		  renderProductBarcode(product.EAN13);
 
         referenceImage.classList.add("hidden");
         referenceImage.removeAttribute("src");
