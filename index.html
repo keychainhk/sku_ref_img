@@ -108,7 +108,7 @@
 
         <!-- Helpful Path Hint -->
         <div class="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-          <span>Target path format: <code class="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">img/XXXXXXXX.png</code></span>
+          <span>Target path format: <code class="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">img/XXXXXXXX.jpg</code></span>
           <button type="button" id="trySampleBtn" class="text-indigo-600 hover:text-indigo-700 font-medium underline underline-offset-2 cursor-pointer">
             Try sample code
           </button>
@@ -134,7 +134,7 @@
               FOUND
             </span>
             <h2 class="text-base font-bold font-mono text-slate-900" id="displayCode">ABCDEFG1</h2>
-            <span class="text-xs text-slate-400 hidden sm:inline" id="displayPath">(img/ABCDEFG1.png)</span>
+            <span class="text-xs text-slate-400 hidden sm:inline" id="displayPath">(img/ABCDEFG1.jpg)</span>
           </div>
 
           <div class="flex items-center space-x-2">
@@ -175,13 +175,13 @@
           Image not found for code <span id="missingCodeLabel" class="font-mono text-indigo-600"></span>
         </h3>
         <p class="text-sm text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-          We looked for <code id="missingPathLabel" class="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">img/XXXXXXXX.png</code> in your repository, but no matching file was returned.
+          We looked for <code id="missingPathLabel" class="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">img/XXXXXXXX.jpg</code> in your repository, but no matching file was returned.
         </p>
         <div class="mt-5 text-xs text-slate-400 bg-slate-50 border border-slate-200/70 rounded-xl p-3 max-w-md mx-auto text-left space-y-1">
           <p class="font-medium text-slate-600">Troubleshooting checklist:</p>
           <ul class="list-disc list-inside space-y-0.5">
             <li>Ensure the file is uploaded inside the <code class="font-mono">img/</code> folder.</li>
-            <li>Verify the filename uses <strong>UPPERCASE</strong> letters and <code class="font-mono">.png</code> extension.</li>
+            <li>Verify the filename uses <strong>UPPERCASE</strong> letters and <code class="font-mono">.jpg</code> extension.</li>
             <li>If testing locally without images, toggle <strong>Demo Mode</strong> in the top-right corner.</li>
           </ul>
         </div>
@@ -194,7 +194,7 @@
   <!-- Footer -->
   <footer class="border-t border-slate-200/80 bg-white py-5 text-center text-xs text-slate-400">
     <div class="max-w-3xl mx-auto px-4">
-      Static Repository Asset Viewer &bull; Expects <code class="font-mono text-slate-500">img/&lt;CODE&gt;.png</code>
+      Static Repository Asset Viewer &bull; Expects <code class="font-mono text-slate-500">img/&lt;CODE&gt;.jpg</code>
     </div>
   </footer>
 
@@ -311,8 +311,8 @@
 
         hideValidationError();
 
-        // 2. Construct target path: img/<CODE>.png
-        const relativePath = `img/${normalizedCode}.png`;
+        // 2. Construct target path: img/<CODE>.jpg
+        const relativePath = `img/${normalizedCode}.jpg`;
 
         // Show loading spinner
         loadingCodeLabel.textContent = normalizedCode;
@@ -335,7 +335,7 @@
           
           openNewTabBtn.href = targetSrc;
           downloadBtn.href = targetSrc;
-          downloadBtn.setAttribute('download', `${normalizedCode}.png`);
+          downloadBtn.setAttribute('download', `${normalizedCode}.jpg`);
 
           setResultView('success');
         };
