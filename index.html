@@ -284,7 +284,7 @@
 
   <footer class="bg-white border-t border-slate-200 py-5">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
-      For internal use only. For enquiry, please contact (852) 95399243
+      For internal use only. For enquiry, please contact (852) 95399243. V2611171554
     </div>
   </footer>
 
@@ -427,6 +427,115 @@
       }
 
       async function fetchProductDatabase() {
+  const response = await fetch(CSV_URL, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      "Could not load products.csv. Check that it is beside index.html."
+    );
+  }
+
+  const rows = parseCSV(await response.text())
+    .filter(row => row.some(cell => cell.trim() !== ""));
+
+  if (rows.length === 0) {
+    throw new Error("products.csv is empty.");
+  }
+
+  const requiredColumns = [
+    "EAN13",
+    "ProductCode",
+    "ProductNameC",
+    "ProductCodeLong"
+  ];
+
+  const headers = rows[0].map(cell =>
+    cell.replace(/^\uFEFF/, "").trim().toLowerCase()
+  );
+
+  const columnIndexes = requiredColumns.map(name =>
+    headers.indexOf(name.toLowerCase())
+  );
+
+  if (columnIndexes.some(index => index === -1)) {
+    throw new Error(
+      "The CSV header must include EAN13, ProductCode, " +
+      "ProductNameC and ProductCodeLong."
+    );
+  }
+
+  const byEAN13 = new Map();
+  const byProductCode = new Map();
+
+  // A null entry marks a conflicting duplicate.
+  function addRecord(index, key, product) {
+    if (!index.has(key)) {
+      index.set(key, product);
+      return;
+    }
+
+    const existing = index.get(key);
+
+    if (
+      existing === null ||
+      requiredColumns.some(name => existing[name] !== product[name])
+    ) {
+      index.set(key, null);
+      console.warn("Conflicting CSV records for:", key);
+    }
+  }
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+
+    const product = {
+      EAN13: (row[columnIndexes[0]] || "").trim(),
+      ProductCode: (row[columnIndexes[1]] || "")
+        .trim()
+        .toUpperCase(),
+      ProductNameC: (row[columnIndexes[2]] || "").trim(),
+      ProductCodeLong: (row[columnIndexes[3]] || "").trim()
+    };
+
+    const validProductCode =
+      PRODUCT_CODE_PATTERN.test(product.ProductCode);
+
+    const validEAN13 =
+      EAN13_PATTERN.test(product.EAN13);
+
+    if (!validProductCode) {
+      console.warn(
+        `Skipping CSV record ${i + 1}: invalid ProductCode`,
+        product.ProductCode
+      );
+      continue;
+    }
+
+    // Product-code searches work even if EAN13 is blank or invalid.
+    addRecord(byProductCode, product.ProductCode, product);
+
+    // Only valid 13-digit barcodes are added to the barcode index.
+    if (validEAN13) {
+      addRecord(byEAN13, product.EAN13, product);
+    } else {
+      console.warn(
+        `CSV record ${i + 1}: EAN13 is blank or invalid`,
+        product.EAN13
+      );
+    }
+  }
+
+  if (byProductCode.size === 0) {
+    throw new Error(
+      "No valid 8-character product codes were found in products.csv."
+    );
+  }
+
+  return { byEAN13, byProductCode };
+}
+	  
         const response = await fetch(CSV_URL, {
           cache: "no-store"
         });
@@ -635,9 +744,18 @@
 
           if (lookupId !== latestLookupId) return;
 
-          const product = isBarcode
-            ? database.byEAN13.get(value)
-            : database.byProductCode.get(value);
+          const index = isBarcode
+  ? database.byEAN13
+  : database.byProductCode;
+
+const product = index.get(value);
+
+if (index.has(value) && product === null) {
+  showNotFound(
+    `Conflicting CSV records found for ${value}. Please check the CSV.`
+  );
+  return;
+}
 
           if (!product) {
             showNotFound(
