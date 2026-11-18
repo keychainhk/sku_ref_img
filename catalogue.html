@@ -99,7 +99,7 @@
 
     <!-- Border Legend / Remarks Bar -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600">
-      <span class="font-medium text-slate-700">快速參考 (Click to jump):</span>
+      <span class="font-medium text-slate-700">顏色參考 (Click to jump):</span>
       <button
         type="button"
         id="legendGreen"
@@ -116,7 +116,7 @@
         title="Click to jump to first R product"
       >
         <span class="inline-block w-3 h-3 rounded border-2 border-rose-500 bg-rose-50"></span>
-        <span>鎖匙扣 <strong>R / S / T</strong> (紅色)</span>
+        <span>鎖匙扣 <strong>R/S/T</strong> (紅色)</span>
       </button>
     </div>
   </header>
@@ -156,7 +156,7 @@
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200 py-5 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
-      For internal use only. For enquiry, please contact (852) 95399243. V2611181532
+      For internal use only. For enquiry, please contact (852) 95399243. V2611181621
     </div>
   </footer>
 
@@ -216,7 +216,7 @@
 
       <!-- Modal Scrollable Body -->
       <div class="overflow-y-auto flex-grow">
-        <!-- Enlarged PNG Section -->
+        <!-- Enlarged Full-Size PNG Section -->
         <div class="p-4 sm:p-6 bg-slate-100/70 border-b border-slate-200 flex flex-col items-center justify-center min-h-[240px]">
           <p
             id="modalImageStatus"
@@ -302,6 +302,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const CSV_URL = "./products.csv";
+      const THUMB_FOLDER = "./img_thumb/";
       const IMAGE_FOLDER = "./img/";
       const PRODUCT_CODE_PATTERN = /^[A-Z0-9]{8}$/;
       const EAN13_PATTERN = /^[0-9]{13}$/;
@@ -334,6 +335,7 @@
 
       let allProducts = [];
       let lastFocusedElement = null;
+      let activeModalRequestId = 0;
 
       // CSV parser
       function parseCSV(text) {
@@ -516,9 +518,11 @@
 
       function openProductModal(product) {
         lastFocusedElement = document.activeElement;
+        const requestId = ++activeModalRequestId;
 
         const productCode = product.ProductCode;
-        const imagePath = `${IMAGE_FOLDER}${productCode}.png`;
+        // Load full-resolution original PNG from /img/ only when clicked
+        const fullImagePath = `${IMAGE_FOLDER}${productCode}.png`;
 
         modalBadgeCode.textContent = productCode;
         modalEAN13.textContent = product.EAN13 || "—";
@@ -532,7 +536,7 @@
         modalImage.removeAttribute("src");
         modalOpenNewTabBtn.classList.add("hidden");
         modalDownloadBtn.classList.add("hidden");
-        modalImageStatus.textContent = "Loading image...";
+        modalImageStatus.textContent = "Loading full-size image...";
         modalImageStatus.classList.remove("hidden");
 
         productModal.classList.remove("hidden");
@@ -541,13 +545,15 @@
 
         const loader = new Image();
         loader.onload = () => {
-          modalImage.src = imagePath;
+          if (requestId !== activeModalRequestId) return;
+
+          modalImage.src = fullImagePath;
           modalImage.alt = product.ProductNameC || `Reference image for ${productCode}`;
           modalImage.classList.remove("hidden");
           modalImageStatus.classList.add("hidden");
 
-          modalOpenNewTabBtn.href = imagePath;
-          modalDownloadBtn.href = imagePath;
+          modalOpenNewTabBtn.href = fullImagePath;
+          modalDownloadBtn.href = fullImagePath;
           modalDownloadBtn.setAttribute("download", `${productCode}.png`);
 
           modalOpenNewTabBtn.classList.remove("hidden");
@@ -555,13 +561,15 @@
         };
 
         loader.onerror = () => {
-          modalImageStatus.textContent = `Image not found for product code ${productCode}.`;
+          if (requestId !== activeModalRequestId) return;
+          modalImageStatus.textContent = `Original image not found for product code ${productCode}.`;
         };
 
-        loader.src = imagePath;
+        loader.src = fullImagePath;
       }
 
       function closeProductModal() {
+        activeModalRequestId++;
         productModal.classList.add("hidden");
         document.body.classList.remove("overflow-hidden");
 
@@ -596,19 +604,20 @@
         imageWrapper.className =
           "relative w-full aspect-square bg-slate-100/60 flex items-center justify-center p-2 sm:p-3 overflow-hidden";
 
+        // Load lightweight thumbnail from /img_thumb/ for album grid view
         const img = document.createElement("img");
-        img.src = `${IMAGE_FOLDER}${code}.png`;
+        img.src = `${THUMB_FOLDER}${code}.png`;
         img.alt = product.ProductNameC || code;
         img.loading = "lazy";
         img.className =
           "max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-200";
 
-        // Fallback badge if PNG file is missing
+        // Fallback badge if thumbnail PNG file is missing
         img.onerror = () => {
           img.classList.add("hidden");
           const fallback = document.createElement("span");
           fallback.className = "text-[11px] font-mono text-slate-400 text-center px-1";
-          fallback.textContent = "No PNG";
+          fallback.textContent = "No Thumb";
           imageWrapper.appendChild(fallback);
         };
 
@@ -736,7 +745,7 @@
             error instanceof TypeError
               ? "Unable to load products.csv. Check your connection or local server setup."
               : error.message;
-          errorState.classList.add("hidden");
+          errorState.classList.remove("hidden");
         });
     });
   </script>
