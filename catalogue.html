@@ -99,15 +99,25 @@
 
     <!-- Border Legend / Remarks Bar -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600">
-      <span class="font-medium text-slate-700">Legend:</span>
-      <div class="flex items-center gap-1.5">
+      <span class="font-medium text-slate-700">快速參考 (Click to jump):</span>
+      <button
+        type="button"
+        id="legendGreen"
+        class="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5 transition"
+        title="Click to jump to first M product"
+      >
         <span class="inline-block w-3 h-3 rounded border-2 border-emerald-500 bg-emerald-50"></span>
-        <span>Starts with <strong>M</strong> (Green)</span>
-      </div>
-      <div class="flex items-center gap-1.5">
+        <span>磁石貼 <strong>M</strong> (綠色)</span>
+      </button>
+      <button
+        type="button"
+        id="legendRed"
+        class="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5 transition"
+        title="Click to jump to first R product"
+      >
         <span class="inline-block w-3 h-3 rounded border-2 border-rose-500 bg-rose-50"></span>
-        <span>Starts with <strong>R / S / T</strong> (Red)</span>
-      </div>
+        <span>鎖匙扣 <strong>R / S / T</strong> (紅色)</span>
+      </button>
     </div>
   </header>
 
@@ -146,7 +156,7 @@
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200 py-5 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
-      For internal use only. For enquiry, please contact (852) 95399243. V2611181527
+      For internal use only. For enquiry, please contact (852) 95399243. V2611181532
     </div>
   </footer>
 
@@ -302,6 +312,8 @@
       const productGrid = document.getElementById("productGrid");
       const productCount = document.getElementById("productCount");
       const filterInput = document.getElementById("filterInput");
+      const legendGreen = document.getElementById("legendGreen");
+      const legendRed = document.getElementById("legendRed");
 
       // Modal elements
       const productModal = document.getElementById("productModal");
@@ -571,6 +583,7 @@
 
         const button = document.createElement("button");
         button.type = "button";
+        button.dataset.code = code;
         button.className =
           `group bg-white rounded-xl ${borderClass} overflow-hidden shadow-xs hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex flex-col text-left`;
         button.setAttribute(
@@ -651,6 +664,34 @@
             ? `${allProducts.length} products (sorted A–Z by 8-digit product code)`
             : `Showing ${products.length} of ${allProducts.length} products`;
       }
+
+      // Jump to first product starting with a specific letter
+      function jumpToFirstProduct(letter) {
+        if (filterInput.value) {
+          filterInput.value = "";
+          renderGrid(allProducts);
+        }
+
+        const target = allProducts.find(p => p.ProductCode.startsWith(letter));
+        if (!target) return;
+
+        const cardElement = productGrid.querySelector(`[data-code="${target.ProductCode}"]`);
+        if (cardElement) {
+          cardElement.scrollIntoView({ behavior: "smooth", block: "center" });
+          cardElement.classList.add("ring-4", "ring-indigo-500", "scale-105", "transition-all", "duration-300");
+          setTimeout(() => {
+            cardElement.classList.remove("ring-4", "ring-indigo-500", "scale-105");
+          }, 1500);
+        }
+      }
+
+      legendGreen.addEventListener("click", () => {
+        jumpToFirstProduct("M");
+      });
+
+      legendRed.addEventListener("click", () => {
+        jumpToFirstProduct("R");
+      });
 
       // Filter handler
       filterInput.addEventListener("input", () => {
