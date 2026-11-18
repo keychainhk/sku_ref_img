@@ -8,7 +8,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.ean-upc.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,18 +59,32 @@
 
       <form id="lookupForm" class="max-w-lg mx-auto" novalidate>
         <div class="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            id="productCodeInput"
-            name="productCode"
-            maxlength="13"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            placeholder="8位英數字產品型號 或 13位數字產品條碼"
-            aria-label="13-digit EAN barcode or 8-character product code"
-            class="min-w-0 flex-grow w-full px-4 py-3.5 font-mono text-base uppercase bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-          >
+          <div class="relative flex-grow min-w-0 w-full">
+            <input
+              type="text"
+              id="productCodeInput"
+              name="productCode"
+              maxlength="13"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="suggestionDropdown"
+              placeholder="8位英數字產品型號 或 13位數字產品條碼"
+              aria-label="13-digit EAN barcode or 8-character product code"
+              class="min-w-0 w-full px-4 py-3.5 font-mono text-base uppercase bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+            >
+
+            <!-- Autocomplete Suggestions Dropdown -->
+            <ul
+              id="suggestionDropdown"
+              role="listbox"
+              aria-label="Product code suggestions"
+              class="hidden absolute left-0 right-0 z-30 mt-1.5 max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg divide-y divide-slate-100"
+            ></ul>
+          </div>
 
           <button
             type="submit"
@@ -270,26 +284,24 @@
           >
 		  
 		  <!-- Product barcode below the image -->
-<div
-  id="productBarcodeContainer"
-  class="hidden mt-6 w-full text-center"
->
-  <div class="inline-block max-w-full bg-white p-4 rounded-lg overflow-x-auto">
-    <svg
-      id="productBarcode"
-      role="img"
-      aria-label="Product EAN-13 barcode"
-      class="mx-auto"
-    ></svg>
-  </div>
-</div>
+          <div
+            id="productBarcodeContainer"
+            class="hidden mt-6 w-full text-center"
+          >
+            <div class="inline-block max-w-full bg-white p-4 rounded-lg overflow-x-auto">
+              <svg
+                id="productBarcode"
+                role="img"
+                aria-label="Product EAN-13 barcode"
+                class="mx-auto"
+              ></svg>
+            </div>
+          </div>
 
-<p
-  id="productBarcodeMessage"
-  class="hidden mt-4 text-sm text-slate-500 text-center"
-></p>
-		  
-		  
+          <p
+            id="productBarcodeMessage"
+            class="hidden mt-4 text-sm text-slate-500 text-center"
+          ></p>
         </div>
       </div>
 
@@ -307,7 +319,7 @@
 
   <footer class="bg-white border-t border-slate-200 py-5">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
-      For internal use only. For enquiry, please contact (852) 95399243. V2611171623
+      For internal use only. For enquiry, please contact (852) 95399243. V2611180950
     </div>
   </footer>
 
@@ -318,9 +330,11 @@
 
       const PRODUCT_CODE_PATTERN = /^[A-Z0-9]{8}$/;
       const EAN13_PATTERN = /^[0-9]{13}$/;
+      const MAX_SUGGESTIONS = 12;
 
       const form = document.getElementById("lookupForm");
       const input = document.getElementById("productCodeInput");
+      const suggestionDropdown = document.getElementById("suggestionDropdown");
       const validationError = document.getElementById("validationError");
 
       const resultContainer = document.getElementById("resultContainer");
@@ -352,7 +366,170 @@
       let latestLookupId = 0;
       let cameraSession = null;
 
-      // Input and result display
+      // Autocomplete state
+      let currentSuggestions = [];
+      let activeSuggestionIndex = -1;
+
+      // Preload CSV database in background for instant autocomplete suggestions
+      void getProductDatabase().catch(() => {
+        // Errors will be surfaced if the user performs a lookup
+      });
+
+      // --- Autocomplete Suggestion Helpers ---
+
+      function hideSuggestions() {
+        suggestionDropdown.classList.add("hidden");
+        suggestionDropdown.replaceChildren();
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+        currentSuggestions = [];
+        activeSuggestionIndex = -1;
+      }
+
+      function setActiveSuggestion(index) {
+        const items = suggestionDropdown.querySelectorAll("[role='option']");
+        if (!items.length) return;
+
+        activeSuggestionIndex = index;
+
+        items.forEach((item, idx) => {
+          const isSelected = idx === activeSuggestionIndex;
+          item.classList.toggle("bg-indigo-50", isSelected);
+          item.setAttribute("aria-selected", isSelected ? "true" : "false");
+
+          if (isSelected) {
+            input.setAttribute("aria-activedescendant", item.id);
+            item.scrollIntoView({ block: "nearest" });
+          }
+        });
+
+        if (activeSuggestionIndex === -1) {
+          input.removeAttribute("aria-activedescendant");
+        }
+      }
+
+      function selectSuggestion(productCode) {
+        input.value = productCode;
+        hideSuggestions();
+        hideValidationError();
+        void lookupProduct(productCode);
+      }
+
+      function renderHighlightedCode(container, code, query) {
+        const matchIndex = code.indexOf(query);
+        if (matchIndex === -1) {
+          container.textContent = code;
+          return;
+        }
+
+        const before = code.slice(0, matchIndex);
+        const match = code.slice(matchIndex, matchIndex + query.length);
+        const after = code.slice(matchIndex + query.length);
+
+        if (before) {
+          container.appendChild(document.createTextNode(before));
+        }
+
+        const mark = document.createElement("span");
+        mark.className = "text-indigo-600 font-bold underline decoration-indigo-300";
+        mark.textContent = match;
+        container.appendChild(mark);
+
+        if (after) {
+          container.appendChild(document.createTextNode(after));
+        }
+      }
+
+      async function updateSuggestions(rawQuery) {
+        const query = rawQuery.trim().toUpperCase();
+
+        // Only suggest when typing 1 to 8 alphanumeric characters (and not a 9+ digit barcode)
+        if (!query || query.length > 8 || !/^[A-Z0-9]+$/.test(query)) {
+          hideSuggestions();
+          return;
+        }
+
+        let database;
+        try {
+          database = await getProductDatabase();
+        } catch {
+          hideSuggestions();
+          return;
+        }
+
+        // Abort if input has changed while awaiting database
+        if (input.value.trim().toUpperCase() !== query) {
+          return;
+        }
+
+        const startsWithMatches = [];
+        const containsMatches = [];
+
+        for (const [code, product] of database.byProductCode.entries()) {
+          if (!product) continue; // Skip conflicting duplicate records
+
+          if (code.startsWith(query)) {
+            startsWithMatches.push(product);
+          } else if (code.includes(query)) {
+            containsMatches.push(product);
+          }
+        }
+
+        startsWithMatches.sort((a, b) => a.ProductCode.localeCompare(b.ProductCode));
+        containsMatches.sort((a, b) => a.ProductCode.localeCompare(b.ProductCode));
+
+        const matches = [...startsWithMatches, ...containsMatches].slice(0, MAX_SUGGESTIONS);
+
+        // If user already typed the exact 8-character code and it's the only match, hide dropdown
+        if (
+          matches.length === 0 ||
+          (matches.length === 1 && matches[0].ProductCode === query)
+        ) {
+          hideSuggestions();
+          return;
+        }
+
+        currentSuggestions = matches;
+        activeSuggestionIndex = -1;
+        suggestionDropdown.replaceChildren();
+
+        matches.forEach((product, index) => {
+          const li = document.createElement("li");
+          li.id = `suggestion-option-${index}`;
+          li.setAttribute("role", "option");
+          li.setAttribute("aria-selected", "false");
+          li.className =
+            "px-4 py-2.5 cursor-pointer hover:bg-indigo-50 transition-colors flex items-center justify-between gap-3 text-left";
+
+          const codeSpan = document.createElement("span");
+          codeSpan.className = "font-mono text-sm font-semibold text-slate-900 shrink-0";
+          renderHighlightedCode(codeSpan, product.ProductCode, query);
+
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "text-xs text-slate-500 truncate";
+          nameSpan.textContent = product.ProductNameC || "—";
+
+          li.appendChild(codeSpan);
+          li.appendChild(nameSpan);
+
+          // Use pointerdown/mousedown so selection triggers before input blur hides the menu
+          li.addEventListener("pointerdown", event => {
+            event.preventDefault();
+            selectSuggestion(product.ProductCode);
+          });
+
+          li.addEventListener("mouseenter", () => {
+            setActiveSuggestion(index);
+          });
+
+          suggestionDropdown.appendChild(li);
+        });
+
+        suggestionDropdown.classList.remove("hidden");
+        input.setAttribute("aria-expanded", "true");
+      }
+
+      // --- Input Events & Keyboard Navigation ---
 
       input.addEventListener("input", () => {
         input.value = input.value.replace(/\s+/g, "").toUpperCase();
@@ -363,6 +540,55 @@
 
         if (cameraSession) {
           void closeScanner(cameraSession);
+        }
+
+        void updateSuggestions(input.value);
+      });
+
+      input.addEventListener("focus", () => {
+        if (input.value.length > 0 && input.value.length <= 8) {
+          void updateSuggestions(input.value);
+        }
+      });
+
+      input.addEventListener("keydown", event => {
+        if (suggestionDropdown.classList.contains("hidden") || currentSuggestions.length === 0) {
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          const nextIndex =
+            activeSuggestionIndex < currentSuggestions.length - 1
+              ? activeSuggestionIndex + 1
+              : 0;
+          setActiveSuggestion(nextIndex);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          const prevIndex =
+            activeSuggestionIndex > 0
+              ? activeSuggestionIndex - 1
+              : currentSuggestions.length - 1;
+          setActiveSuggestion(prevIndex);
+        } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+          event.preventDefault();
+          const chosen = currentSuggestions[activeSuggestionIndex];
+          if (chosen) {
+            selectSuggestion(chosen.ProductCode);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          hideSuggestions();
+        }
+      });
+
+      // Close dropdown when clicking outside the input wrapper
+      document.addEventListener("pointerdown", event => {
+        if (
+          !input.contains(event.target) &&
+          !suggestionDropdown.contains(event.target)
+        ) {
+          hideSuggestions();
         }
       });
 
@@ -450,182 +676,182 @@
       }
 
       async function fetchProductDatabase() {
-  const response = await fetch(CSV_URL, {
-    cache: "no-store"
-  });
+        const response = await fetch(CSV_URL, {
+          cache: "no-store"
+        });
 
-  if (!response.ok) {
-    throw new Error(
-      "Could not load products.csv. Check that it is beside index.html."
-    );
-  }
+        if (!response.ok) {
+          throw new Error(
+            "Could not load products.csv. Check that it is beside index.html."
+          );
+        }
 
-  const rows = parseCSV(await response.text())
-    .filter(row => row.some(cell => cell.trim() !== ""));
+        const rows = parseCSV(await response.text())
+          .filter(row => row.some(cell => cell.trim() !== ""));
 
-  if (rows.length === 0) {
-    throw new Error("products.csv is empty.");
-  }
+        if (rows.length === 0) {
+          throw new Error("products.csv is empty.");
+        }
 
-  const requiredColumns = [
-    "EAN13",
-    "ProductCode",
-    "ProductNameC",
-    "ProductCodeLong"
-  ];
+        const requiredColumns = [
+          "EAN13",
+          "ProductCode",
+          "ProductNameC",
+          "ProductCodeLong"
+        ];
 
-  const headers = rows[0].map(cell =>
-    cell.replace(/^\uFEFF/, "").trim().toLowerCase()
-  );
+        const headers = rows[0].map(cell =>
+          cell.replace(/^\uFEFF/, "").trim().toLowerCase()
+        );
 
-  const columnIndexes = requiredColumns.map(name =>
-    headers.indexOf(name.toLowerCase())
-  );
+        const columnIndexes = requiredColumns.map(name =>
+          headers.indexOf(name.toLowerCase())
+        );
 
-  if (columnIndexes.some(index => index === -1)) {
-    throw new Error(
-      "The CSV header must include EAN13, ProductCode, " +
-      "ProductNameC and ProductCodeLong."
-    );
-  }
+        if (columnIndexes.some(index => index === -1)) {
+          throw new Error(
+            "The CSV header must include EAN13, ProductCode, " +
+            "ProductNameC and ProductCodeLong."
+          );
+        }
 
-  const byEAN13 = new Map();
-  const byProductCode = new Map();
+        const byEAN13 = new Map();
+        const byProductCode = new Map();
 
-  // A null entry marks a conflicting duplicate.
-  function addRecord(index, key, product) {
-    if (!index.has(key)) {
-      index.set(key, product);
-      return;
-    }
+        // A null entry marks a conflicting duplicate.
+        function addRecord(index, key, product) {
+          if (!index.has(key)) {
+            index.set(key, product);
+            return;
+          }
 
-    const existing = index.get(key);
+          const existing = index.get(key);
 
-    if (
-      existing === null ||
-      requiredColumns.some(name => existing[name] !== product[name])
-    ) {
-      index.set(key, null);
-      console.warn("Conflicting CSV records for:", key);
-    }
-  }
+          if (
+            existing === null ||
+            requiredColumns.some(name => existing[name] !== product[name])
+          ) {
+            index.set(key, null);
+            console.warn("Conflicting CSV records for:", key);
+          }
+        }
 
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
 
-    const product = {
-      EAN13: (row[columnIndexes[0]] || "").trim(),
-      ProductCode: (row[columnIndexes[1]] || "")
-        .trim()
-        .toUpperCase(),
-      ProductNameC: (row[columnIndexes[2]] || "").trim(),
-      ProductCodeLong: (row[columnIndexes[3]] || "").trim()
-    };
+          const product = {
+            EAN13: (row[columnIndexes[0]] || "").trim(),
+            ProductCode: (row[columnIndexes[1]] || "")
+              .trim()
+              .toUpperCase(),
+            ProductNameC: (row[columnIndexes[2]] || "").trim(),
+            ProductCodeLong: (row[columnIndexes[3]] || "").trim()
+          };
 
-    const validProductCode =
-      PRODUCT_CODE_PATTERN.test(product.ProductCode);
+          const validProductCode =
+            PRODUCT_CODE_PATTERN.test(product.ProductCode);
 
-    const validEAN13 =
-      EAN13_PATTERN.test(product.EAN13);
+          const validEAN13 =
+            EAN13_PATTERN.test(product.EAN13);
 
-    if (!validProductCode) {
-      console.warn(
-        `Skipping CSV record ${i + 1}: invalid ProductCode`,
-        product.ProductCode
-      );
-      continue;
-    }
+          if (!validProductCode) {
+            console.warn(
+              `Skipping CSV record ${i + 1}: invalid ProductCode`,
+              product.ProductCode
+            );
+            continue;
+          }
 
-    // Product-code searches work even if EAN13 is blank or invalid.
-    addRecord(byProductCode, product.ProductCode, product);
+          // Product-code searches work even if EAN13 is blank or invalid.
+          addRecord(byProductCode, product.ProductCode, product);
 
-    // Only valid 13-digit barcodes are added to the barcode index.
-    if (validEAN13) {
-      addRecord(byEAN13, product.EAN13, product);
-    } else {
-      console.warn(
-        `CSV record ${i + 1}: EAN13 is blank or invalid`,
-        product.EAN13
-      );
-    }
-  }
+          // Only valid 13-digit barcodes are added to the barcode index.
+          if (validEAN13) {
+            addRecord(byEAN13, product.EAN13, product);
+          } else {
+            console.warn(
+              `CSV record ${i + 1}: EAN13 is blank or invalid`,
+              product.EAN13
+            );
+          }
+        }
 
-  if (byProductCode.size === 0) {
-    throw new Error(
-      "No valid 8-character product codes were found in products.csv."
-    );
-  }
+        if (byProductCode.size === 0) {
+          throw new Error(
+            "No valid 8-character product codes were found in products.csv."
+          );
+        }
 
-  return { byEAN13, byProductCode };
-}
+        return { byEAN13, byProductCode };
+      }
 	  
-	function renderProductBarcode(rawEAN13) {
-  const container =
-    document.getElementById("productBarcodeContainer");
+      function renderProductBarcode(rawEAN13) {
+        const container =
+          document.getElementById("productBarcodeContainer");
 
-  const barcodeSVG =
-    document.getElementById("productBarcode");
+        const barcodeSVG =
+          document.getElementById("productBarcode");
 
-  const message =
-    document.getElementById("productBarcodeMessage");
+        const message =
+          document.getElementById("productBarcodeMessage");
 
-  const ean13 = String(rawEAN13 || "").trim();
+        const ean13 = String(rawEAN13 || "").trim();
 
-  // Clear the previous product's barcode.
-  container.classList.add("hidden");
-  message.classList.add("hidden");
-  barcodeSVG.replaceChildren();
+        // Clear the previous product's barcode.
+        container.classList.add("hidden");
+        message.classList.add("hidden");
+        barcodeSVG.replaceChildren();
 
-  if (!ean13) {
-    message.textContent = "No EAN-13 barcode assigned.";
-    message.classList.remove("hidden");
-    return;
-  }
+        if (!ean13) {
+          message.textContent = "No EAN-13 barcode assigned.";
+          message.classList.remove("hidden");
+          return;
+        }
 
-  if (!isValidEAN13(ean13)) {
-    message.textContent =
-      "Cannot generate barcode: the EAN-13 number or check digit is invalid.";
+        if (!isValidEAN13(ean13)) {
+          message.textContent =
+            "Cannot generate barcode: the EAN-13 number or check digit is invalid.";
 
-    message.classList.remove("hidden");
-    return;
-  }
+          message.classList.remove("hidden");
+          return;
+        }
 
-  if (typeof JsBarcode === "undefined") {
-    message.textContent =
-      "The barcode generator could not load. Please refresh the page.";
+        if (typeof JsBarcode === "undefined") {
+          message.textContent =
+            "The barcode generator could not load. Please refresh the page.";
 
-    message.classList.remove("hidden");
-    return;
-  }
+          message.classList.remove("hidden");
+          return;
+        }
 
-  try {
-    JsBarcode(barcodeSVG, ean13, {
-      format: "EAN13",
-      width: 2,
-      height: 75,
-      displayValue: true,
-      fontSize: 18,
-      textMargin: 6,
-      margin: 16,
-      background: "#ffffff",
-      lineColor: "#000000"
-    });
+        try {
+          JsBarcode(barcodeSVG, ean13, {
+            format: "EAN13",
+            width: 2,
+            height: 75,
+            displayValue: true,
+            fontSize: 18,
+            textMargin: 6,
+            margin: 16,
+            background: "#ffffff",
+            lineColor: "#000000"
+          });
 
-    barcodeSVG.setAttribute(
-      "aria-label",
-      `EAN-13 barcode ${ean13}`
-    );
+          barcodeSVG.setAttribute(
+            "aria-label",
+            `EAN-13 barcode ${ean13}`
+          );
 
-    container.classList.remove("hidden");
-  } catch (error) {
-    barcodeSVG.replaceChildren();
+          container.classList.remove("hidden");
+        } catch (error) {
+          barcodeSVG.replaceChildren();
 
-    message.textContent =
-      "Unable to generate this product's barcode.";
+          message.textContent =
+            "Unable to generate this product's barcode.";
 
-    message.classList.remove("hidden");
-  }
-}
+          message.classList.remove("hidden");
+        }
+      }
 
       function getProductDatabase() {
         if (!mappingPromise) {
@@ -653,7 +879,7 @@
         displayProductCodeLong.textContent =
           product.ProductCodeLong || "—";
 		  
-		  renderProductBarcode(product.EAN13);
+        renderProductBarcode(product.EAN13);
 
         referenceImage.classList.add("hidden");
         referenceImage.removeAttribute("src");
@@ -710,6 +936,7 @@
         const lookupId = ++latestLookupId;
         const value = rawValue.trim().toUpperCase();
 
+        hideSuggestions();
         hideValidationError();
         resultContainer.classList.add("hidden");
 
@@ -739,17 +966,17 @@
           if (lookupId !== latestLookupId) return;
 
           const index = isBarcode
-  ? database.byEAN13
-  : database.byProductCode;
+            ? database.byEAN13
+            : database.byProductCode;
 
-const product = index.get(value);
+          const product = index.get(value);
 
-if (index.has(value) && product === null) {
-  showNotFound(
-    `Conflicting CSV records found for ${value}. Please check the CSV.`
-  );
-  return;
-}
+          if (index.has(value) && product === null) {
+            showNotFound(
+              `Conflicting CSV records found for ${value}. Please check the CSV.`
+            );
+            return;
+          }
 
           if (!product) {
             showNotFound(
@@ -897,6 +1124,7 @@ if (index.has(value) && product === null) {
         session.accepted = true;
 
         input.value = barcode;
+        hideSuggestions();
         hideValidationError();
 
         void closeScanner(session);
@@ -906,6 +1134,7 @@ if (index.has(value) && product === null) {
       async function startScanner() {
         if (cameraSession) return;
 
+        hideSuggestions();
         hideValidationError();
 
         if (!window.isSecureContext) {
