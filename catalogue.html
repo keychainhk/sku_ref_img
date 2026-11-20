@@ -36,6 +36,26 @@
       animation: fadeIn 0.2s ease-out forwards;
     }
 
+    /* Smooth collapsible drawer for legend & quick jump bar */
+    .collapsible-bar {
+      display: grid;
+      grid-template-rows: 1fr;
+      opacity: 1;
+      transition: grid-template-rows 0.24s ease, opacity 0.2s ease, margin-top 0.24s ease, padding-top 0.24s ease;
+    }
+
+    .collapsible-bar.is-collapsed {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      margin-top: 0;
+      padding-top: 0;
+      pointer-events: none;
+    }
+
+    .collapsible-bar > div {
+      overflow: hidden;
+    }
+
     /* Adaptive grid: strictly 3 columns on mobile, auto-filling columns on desktop */
     .product-grid {
       display: grid;
@@ -97,42 +117,47 @@
       </div>
     </div>
 
-    <!-- Border Legend & Prefix Jump Bar -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-3 pt-3 border-t border-slate-100 space-y-2 text-xs text-slate-600">
-      <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <span class="font-medium text-slate-700">顏色參考 (Click):</span>
-        <button
-          type="button"
-          id="legendGreen"
-          class="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5 transition"
-          title="Click to jump to first M product"
-        >
-          <span class="inline-block w-3 h-3 rounded border-2 border-emerald-500 bg-emerald-50"></span>
-          <span>磁石貼 <strong>M</strong> (綠色)</span>
-        </button>
-        <button
-          type="button"
-          id="legendRed"
-          class="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5 transition"
-          title="Click to jump to first R product"
-        >
-          <span class="inline-block w-3 h-3 rounded border-2 border-rose-500 bg-rose-50"></span>
-          <span>鎖匙扣 <strong>R/S/T</strong> (紅色)</span>
-        </button>
-      </div>
+    <!-- Auto-hiding Border Legend & Prefix Jump Bar -->
+    <div
+      id="quickJumpDrawer"
+      class="collapsible-bar max-w-7xl mx-auto px-4 sm:px-6 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600"
+    >
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <span class="font-medium text-slate-700">顏色參考 (Click):</span>
+          <button
+            type="button"
+            id="legendGreen"
+            class="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5 transition"
+            title="Click to jump to first M product"
+          >
+            <span class="inline-block w-3 h-3 rounded border-2 border-emerald-500 bg-emerald-50"></span>
+            <span>磁石貼 <strong>M</strong> (綠色)</span>
+          </button>
+          <button
+            type="button"
+            id="legendRed"
+            class="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5 transition"
+            title="Click to jump to first R product"
+          >
+            <span class="inline-block w-3 h-3 rounded border-2 border-rose-500 bg-rose-50"></span>
+            <span>鎖匙扣 <strong>R/S/T</strong> (紅色)</span>
+          </button>
+        </div>
 
-      <div id="prefixJumpBar" class="flex flex-wrap items-center gap-1.5 pt-0.5">
-        <span class="font-medium text-slate-700 mr-1">快速跳到 (Click):</span>
-        <button type="button" data-prefix="MAGRO" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">路牌磁石 MAGRO</button>
-        <button type="button" data-prefix="MAGSB" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-藍色 MAGSB</button>
-        <button type="button" data-prefix="MAGSL" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-積木 MAGSL</button>
-        <button type="button" data-prefix="MAGSM" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-微縮 MAGSM</button>
-        <button type="button" data-prefix="MAGSTW" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-水彩 MAGSTW</button>
-		<button type="button" data-prefix="MSAIR" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-航空 MSAIR</button>
-        <button type="button" data-prefix="MSART" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-圖案 MSART</button>
-        <button type="button" data-prefix="MAGTR" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">車站磁石 MAGTR</button>
-        <button type="button" data-prefix="ROADS" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">路牌匙扣 ROADS</button>
-        <button type="button" data-prefix="TRAIN" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">車站匙扣 TRAIN</button>
+        <div id="prefixJumpBar" class="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span class="font-medium text-slate-700 mr-1">快速跳到 (Click):</span>
+          <button type="button" data-prefix="MAGRO" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">路牌磁石 MAGRO</button>
+          <button type="button" data-prefix="MAGSB" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-藍色 MAGSB</button>
+          <button type="button" data-prefix="MAGSL" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-積木 MAGSL</button>
+          <button type="button" data-prefix="MAGSM" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-微縮 MAGSM</button>
+          <button type="button" data-prefix="MAGSTW" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-水彩 MAGSTW</button>
+          <button type="button" data-prefix="MSAIR" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-航空 MSAIR</button>
+          <button type="button" data-prefix="MSART" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">郵票磁石-圖案 MSART</button>
+          <button type="button" data-prefix="MAGTR" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">車站磁石 MAGTR</button>
+          <button type="button" data-prefix="ROADS" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">路牌匙扣 ROADS</button>
+          <button type="button" data-prefix="TRAIN" class="prefix-jump-btn px-2 py-0.5 rounded-md font-mono font-medium bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-700 border border-slate-200 transition">車站匙扣 TRAIN</button>
+        </div>
       </div>
     </div>
   </header>
@@ -172,7 +197,7 @@
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200 py-5 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500">
-      For internal use only. For enquiry, please contact (852) 95399243. V2611191508
+      For internal use only. For enquiry, please contact (852) 95399243. V2611201002
     </div>
   </footer>
 
@@ -329,6 +354,7 @@
       const productGrid = document.getElementById("productGrid");
       const productCount = document.getElementById("productCount");
       const filterInput = document.getElementById("filterInput");
+      const quickJumpDrawer = document.getElementById("quickJumpDrawer");
       const legendGreen = document.getElementById("legendGreen");
       const legendRed = document.getElementById("legendRed");
       const prefixJumpButtons = document.querySelectorAll(".prefix-jump-btn");
@@ -353,6 +379,48 @@
       let allProducts = [];
       let lastFocusedElement = null;
       let activeModalRequestId = 0;
+
+      // Auto-hide legend & quick jump bar on scroll down, show on scroll up
+      let lastScrollY = window.scrollY;
+      let scrollTicking = false;
+      const SCROLL_THRESHOLD = 8;
+
+      function setDrawerCollapsed(collapsed) {
+        quickJumpDrawer.classList.toggle("is-collapsed", collapsed);
+        quickJumpDrawer.setAttribute("aria-hidden", String(collapsed));
+        quickJumpDrawer.querySelectorAll("button").forEach(btn => {
+          btn.tabIndex = collapsed ? -1 : 0;
+        });
+      }
+
+      function handleScroll() {
+        const currentY = Math.max(0, window.scrollY);
+        const delta = currentY - lastScrollY;
+
+        if (currentY <= 24) {
+          setDrawerCollapsed(false);
+          lastScrollY = currentY;
+          scrollTicking = false;
+          return;
+        }
+
+        if (delta > SCROLL_THRESHOLD) {
+          setDrawerCollapsed(true);
+          lastScrollY = currentY;
+        } else if (delta < -SCROLL_THRESHOLD) {
+          setDrawerCollapsed(false);
+          lastScrollY = currentY;
+        }
+
+        scrollTicking = false;
+      }
+
+      window.addEventListener("scroll", () => {
+        if (!scrollTicking) {
+          window.requestAnimationFrame(handleScroll);
+          scrollTicking = true;
+        }
+      }, { passive: true });
 
       // CSV parser
       function parseCSV(text) {
