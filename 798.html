@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Citybus 798 ETA</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: #f3f6f8;
+            color: #182637;
+            font: 1rem/1.5 system-ui, sans-serif;
+        }
+        main { max-width: 56rem; margin: auto; padding: clamp(1rem, 4vw, 2.5rem); }
+        h1 { margin: 0; font-size: clamp(1.7rem, 5vw, 2.3rem); }
+        header p { margin: .25rem 0 1.5rem; color: #496075; }
+        .stops { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+        section { background: white; border: 1px solid #d4dfe8; border-radius: .75rem; padding: 1rem; }
+        h2 { margin: 0 0 .75rem; font-size: 1.2rem; }
+        button {
+            width: 100%; min-height: 44px; padding: .55rem .75rem;
+            border: 1px solid #18596c; border-radius: .5rem;
+            background: #18596c; color: white; font: inherit; font-weight: 600; cursor: pointer;
+        }
+        button:disabled { opacity: .6; cursor: default; }
+        button:focus-visible { outline: 3px solid #147b9b; outline-offset: 3px; }
+        .copy { background: white; color: #18596c; }
+        .results { margin: .85rem 0; }
+        .updated, .status, .remaining, .copy-status { color: #496075; font-size: .9rem; }
+        .status, .updated, .copy-status { margin: .35rem 0; }
+        .copy-status:empty, .status:empty, .arrivals:empty { display: none; }
+        .arrivals { margin: .45rem 0 0; padding: 0; list-style: none; }
+        .arrivals li {
+            display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+            gap: .25rem 1rem; padding: .5rem 0; border-top: 1px solid #e1e8ef;
+            font-variant-numeric: tabular-nums;
+        }
+        .arrival-time { font-size: 1.15rem; font-weight: 700; }
+        @media (max-width: 39rem) { .stops { grid-template-columns: minmax(0, 1fr); } }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>Citybus 798 ETA</h1>
+            <p>All times in Hong Kong time (HKT)</p>
+        </header>
+        <div class="stops">
+            <section data-stop="001683" aria-labelledby="leung-kit-wah">
+                <h2 id="leung-kit-wah">Leung Kit Wah School</h2>
+                <button type="button" class="refresh">Check ETA</button>
+                <div class="results">
+                    <p class="status" role="status">Tap Check ETA to see arrivals.</p>
+                    <p class="updated" hidden>Updated <time></time></p>
+                    <ul class="arrivals" aria-label="Estimated arrivals"></ul>
+                </div>
+                <button type="button" class="copy" disabled>Copy ETA to clipboard</button>
+                <p class="copy-status" role="status"></p>
+            </section>
+            <section data-stop="001962" aria-labelledby="greenfield-court">
+                <h2 id="greenfield-court">Greenfield Court</h2>
+                <button type="button" class="refresh">Check ETA</button>
+                <div class="results">
+                    <p class="status" role="status">Tap Check ETA to see arrivals.</p>
+                    <p class="updated" hidden>Updated <time></time></p>
+                    <ul class="arrivals" aria-label="Estimated arrivals"></ul>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script>
+        const arrivalClock = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        });
+        const updateClock = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+        });
+
+        function minutesRemaining(timestamp, now) {
+            return Math.max(0, Math.ceil((timestamp - now) / 60000));
+        }
+
+        function renderArrival(timestamp, now) {
+            const row = document.createElement('li');
+            const time = document.createElement('time');
+            time.className = 'arrival-time';
+            time.dateTime = new Date(timestamp).toISOString();
+            time.textContent = arrivalClock.format(timestamp);
+
+            const remaining = document.createElement('span');
+            remaining.className = 'remaining';
+            remaining.dataset.arrival = timestamp;
+            remaining.textContent = minutesRemaining(timestamp, now) + ' min';
+            row.append(time, remaining);
+            return row;
+        }
+
+        async function refreshStop(stop) {
+            const refresh = stop.querySelector('.refresh');
+            const status = stop.querySelector('.status');
+            const updated = stop.querySelector('.updated');
+            const updateTime = updated.querySelector('time');
+            const arrivals = stop.querySelector('.arrivals');
+            const copy = stop.querySelector('.copy');
+
+            refresh.disabled = true;
+            if (copy) {
+                copy.disabled = true;
+                stop.querySelector('.copy-status').textContent = '';
+            }
+            status.textContent = 'Checking arrivals…';
+            arrivals.replaceChildren();
+            updated.hidden = true;
+
+            try {
+                const response = await fetch(
+                    'https://rt.data.gov.hk/v2/transport/citybus/eta/CTB/' + stop.dataset.stop + '/798',
+                    { cache: 'no-store' }
+                );
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const payload = await response.json();
+                const timestamps = payload.data
+                    .map(item => Date.parse(item.eta))
+                    .filter(Number.isFinite);
+                const now = Date.now();
+                const sourceTime = Date.parse(payload.data_timestamp);
+                const timestamp = Number.isFinite(sourceTime) ? sourceTime : now;
+
+                arrivals.replaceChildren(...timestamps.map(eta => renderArrival(eta, now)));
+                updateTime.dateTime = new Date(timestamp).toISOString();
+                updateTime.textContent = updateClock.format(timestamp);
+                updated.hidden = false;
+                status.textContent = timestamps.length
+                    ? timestamps.length + (timestamps.length === 1 ? ' arrival found.' : ' arrivals found.')
+                    : 'No upcoming arrivals reported.';
+                if (copy) copy.disabled = !timestamps.length;
+            } catch (error) {
+                console.error(error);
+                status.textContent = 'Could not load arrivals. Please try again.';
+            } finally {
+                refresh.disabled = false;
+            }
+        }
+
+        document.querySelectorAll('[data-stop]').forEach(stop => {
+            stop.querySelector('.refresh').addEventListener('click', () => refreshStop(stop));
+            const copy = stop.querySelector('.copy');
+            if (!copy) return;
+
+            copy.addEventListener('click', async () => {
+                const status = stop.querySelector('.copy-status');
+                const rows = [...stop.querySelectorAll('.arrivals li')];
+                const text = rows.map(row => {
+                    const time = row.querySelector('time').textContent;
+                    const remaining = row.querySelector('.remaining').textContent;
+                    return time + ' (' + remaining + ')';
+                }).join('\n');
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    status.textContent = 'ETA copied.';
+                } catch (error) {
+                    status.textContent = 'Clipboard unavailable. You can select and copy the times.';
+                }
+            });
+        });
+
+        setInterval(() => {
+            const now = Date.now();
+            document.querySelectorAll('[data-arrival]').forEach(label => {
+                const text = minutesRemaining(Number(label.dataset.arrival), now) + ' min';
+                if (label.textContent !== text) label.textContent = text;
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
