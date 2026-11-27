@@ -57,7 +57,7 @@
                     <ul class="arrivals" aria-label="Estimated arrivals"></ul>
                 </div>
                 <button type="button" class="copy" disabled>Copy ETA to clipboard</button>
-                <button type="button" class="whatsapp" disabled>Send ETA via WhatsApp</button>
+                
                 <p class="copy-status" role="status"></p>
             </section>
             <section data-stop="001962" aria-labelledby="greenfield-court">
@@ -157,10 +157,7 @@
             const copy = stop.querySelector('.copy');
             if (!copy) return;
 
-            stop.querySelector('.whatsapp').addEventListener('click', () => {
-                const message = encodeURIComponent(etaText(stop));
-                window.open('https://wa.me/85262102105?text=' + message, '_blank', 'noopener,noreferrer');
-            });
+            ;
 
             copy.addEventListener('click', async () => {
                 const status = stop.querySelector('.copy-status');
