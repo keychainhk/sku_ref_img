@@ -26,6 +26,7 @@
         button:disabled { opacity: .6; cursor: default; }
         button:focus-visible { outline: 3px solid #147b9b; outline-offset: 3px; }
         .copy { background: white; color: #18596c; }
+        .whatsapp { margin-top: .5rem; background: #176143; border-color: #176143; }
         .results { margin: .85rem 0; }
         .updated, .status, .remaining, .copy-status { color: #496075; font-size: .9rem; }
         .status, .updated, .copy-status { margin: .35rem 0; }
@@ -44,7 +45,7 @@
     <main>
         <header>
             <h1>Citybus 798 ETA</h1>
-            <p>All times in Hong Kong time (HKT)</p>
+            
         </header>
         <div class="stops">
             <section data-stop="001683" aria-labelledby="leung-kit-wah">
@@ -56,6 +57,7 @@
                     <ul class="arrivals" aria-label="Estimated arrivals"></ul>
                 </div>
                 <button type="button" class="copy" disabled>Copy ETA to clipboard</button>
+                <button type="button" class="whatsapp" disabled>Send ETA via WhatsApp</button>
                 <p class="copy-status" role="status"></p>
             </section>
             <section data-stop="001962" aria-labelledby="greenfield-court">
@@ -102,13 +104,12 @@
             const updated = stop.querySelector('.updated');
             const updateTime = updated.querySelector('time');
             const arrivals = stop.querySelector('.arrivals');
-            const copy = stop.querySelector('.copy');
+            const shareButtons = stop.querySelectorAll('.copy, .whatsapp');
 
             refresh.disabled = true;
-            if (copy) {
-                copy.disabled = true;
-                stop.querySelector('.copy-status').textContent = '';
-            }
+            shareButtons.forEach(button => { button.disabled = true; });
+            const copyStatus = stop.querySelector('.copy-status');
+            if (copyStatus) copyStatus.textContent = '';
             status.textContent = 'Checking arrivals…';
             arrivals.replaceChildren();
             updated.hidden = true;
@@ -134,7 +135,7 @@
                 status.textContent = timestamps.length
                     ? timestamps.length + (timestamps.length === 1 ? ' arrival found.' : ' arrivals found.')
                     : 'No upcoming arrivals reported.';
-                if (copy) copy.disabled = !timestamps.length;
+                shareButtons.forEach(button => { button.disabled = !timestamps.length; });
             } catch (error) {
                 console.error(error);
                 status.textContent = 'Could not load arrivals. Please try again.';
@@ -143,22 +144,29 @@
             }
         }
 
+        function etaText(stop) {
+            return Array.from(stop.querySelectorAll('.arrivals li'), row => {
+                const time = row.querySelector('time').textContent;
+                const remaining = row.querySelector('.remaining').textContent;
+                return time + ' (' + remaining + ')';
+            }).join('\n');
+        }
+
         document.querySelectorAll('[data-stop]').forEach(stop => {
             stop.querySelector('.refresh').addEventListener('click', () => refreshStop(stop));
             const copy = stop.querySelector('.copy');
             if (!copy) return;
 
+            stop.querySelector('.whatsapp').addEventListener('click', () => {
+                const message = encodeURIComponent(etaText(stop));
+                window.open('https://wa.me/85262102105?text=' + message, '_blank', 'noopener,noreferrer');
+            });
+
             copy.addEventListener('click', async () => {
                 const status = stop.querySelector('.copy-status');
-                const rows = [...stop.querySelectorAll('.arrivals li')];
-                const text = rows.map(row => {
-                    const time = row.querySelector('time').textContent;
-                    const remaining = row.querySelector('.remaining').textContent;
-                    return time + ' (' + remaining + ')';
-                }).join('\n');
 
                 try {
-                    await navigator.clipboard.writeText(text);
+                    await navigator.clipboard.writeText(etaText(stop));
                     status.textContent = 'ETA copied.';
                 } catch (error) {
                     status.textContent = 'Clipboard unavailable. You can select and copy the times.';
